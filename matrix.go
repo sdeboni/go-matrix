@@ -8,45 +8,7 @@ import (
 )
 
 // Define the Matrix type here.
-type Matrix interface {
-  Cols() [][]int
-  Rows() [][]int
-  Set(int, int, int) bool
-}
-
-type matrix struct {
-  data [][]int
-}
-
-func (m *matrix) width() int {
-  if len(m.data) == 0 {
-    return 0
-  }
-  return len(m.data[0])
-}
-
-func (m *matrix) addRow(s string) error {
-  elements := strings.Split(strings.TrimSpace(s), " ")  
-  if m.width() > 0 && len(elements) != m.width() {
-    return fmt.Errorf(
-      "expected %d elements in row, found %d in '%s'",
-      m.width(),
-      len(elements),
-      s,
-    )
-  }
-
-  row := make([]int, 0, len(elements))
-  for _, ele := range elements {
-    if val, err := strconv.Atoi(ele); err != nil {
-      return fmt.Errorf("%s is not an int: %v", ele, err)
-    } else {
-      row = append(row, val)
-    }
-  }
-  m.data = append(m.data, row)
-  return nil
-}
+type Matrix [][]int
 
 func New(s string) (Matrix, error) {
   if strings.TrimSpace(s) == "" {
@@ -54,28 +16,43 @@ func New(s string) (Matrix, error) {
   }
  
   rows := strings.Split(s, "\n")
-  data := make([][]int, 0, len(rows))
-
-  m := matrix{ data }  
-  for _, row := range rows {
-    if err := m.addRow(row); err != nil {
-      return nil, err
+  matrix := Matrix{}
+  
+  for _, str := range rows {
+    cols := strings.Split(strings.TrimSpace(str), " ")
+    if len(matrix) > 0 && len(matrix[0]) != len(cols) {
+      return nil, fmt.Errorf(
+        "expected %d elements in row, found %d in '%s'",
+        len(matrix[0]),
+        len(cols),
+        str,
+      )
     }
+
+    row := make([]int, 0, len(cols))
+    for _, ele := range cols {
+      if val, err := strconv.Atoi(ele); err != nil {
+        return nil, fmt.Errorf("'%s' is not an int: %v", ele, err)
+      } else {
+        row = append(row, val)
+      }
+    }
+    matrix = append(matrix, row)
   }
 
-  return &m, nil
+  return matrix, nil
 }
   
 // Cols and Rows must return the results without affecting the matrix.
-func (m *matrix) Cols() [][]int {
-  transposed := make([][]int, 0, m.width())
+func (matrix Matrix) Cols() [][]int {
+  transposed := make([][]int, 0, len(matrix[0]))
 
-  width := len(m.data)
+  width := len(matrix)
   for i := 0; i < cap(transposed); i++ {
     transposed = append(transposed, make([]int, width)) 
   }
 
-  for r, row := range m.data {
+  for r, row := range matrix {
     for c, val := range row {
       transposed[c][r] = val
     }
@@ -83,25 +60,23 @@ func (m *matrix) Cols() [][]int {
 	return transposed
 }
 
-func (m *matrix) Rows() [][]int {
-  data := make([][]int, len(m.data))
+func (matrix Matrix) Rows() [][]int {
+  data := make([][]int, len(matrix))
    
-  width := m.width()
-
-  for i, row := range m.data {
-    data[i] = make([]int, width)
-    copy(data[i], row)
+  for r, row := range matrix {
+    data[r] = make([]int, len(matrix[0]))
+    copy(data[r], row)
   }
   return data
 }
 
-func (m *matrix) Set(row, col, val int) bool {
-  if row < 0 || row >= len(m.data) {
+func (matrix Matrix) Set(row, col, val int) bool {
+  if row < 0 || row >= len(matrix) {
     return false
   }
-  if col < 0 || col >= m.width() {
+  if col < 0 || col >= len(matrix[0]) {
     return false
   }
-  m.data[row][col] = val
+  matrix[row][col] = val
   return true
 }
